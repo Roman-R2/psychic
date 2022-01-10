@@ -20,7 +20,8 @@ app_name = 'psychic'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('',
-         include('psychic_test.urls', namespace='psychic_test')
-         ),
+    path(
+        '',
+        include('psychic_test.urls', namespace='psychic_test')
+    ),
 ]
