@@ -1,20 +1,64 @@
 import random
 
-from .models import Physic, PsychicNumbers
+from django.db.models import F
+
+from .models import Physic, PsychicNumbers, UserNumbers
 
 
-def get_psychic_assumptions(session_key: str):
+def get_last_confidence_level(session_key: str, psychic_pk: int):
+    """Получит последний уровень достоверности экстрасенса для определенного
+    пользователя"""
+    this_psychic = PsychicNumbers.objects.filter(
+        user_session=session_key,
+        psychic=Physic.objects.get(pk=psychic_pk)).last()
+    if this_psychic:
+        return this_psychic.confidence_level
+    return 0
+
+
+def get_psychic_assumptions(session_key: str) -> list:
     """Получит предположения экстрасенсов"""
     assumptions = []
     physics = Physic.objects.all()
-    for physic in physics:
+    for psychic in physics:
         this_number = random.randint(0, 99)
         PsychicNumbers.objects.create(
-            psychic=Physic(pk=physic.pk),
+            psychic=Physic(pk=psychic.pk),
             user_session=session_key,
             number=this_number,
-            confidence_level=0
+            confidence_level=get_last_confidence_level(session_key, psychic.pk)
         )
-        assumptions.append((physic.name, this_number))
-    # print(physics)
+        assumptions.append((psychic.name, this_number))
     return assumptions
+
+
+def save_user_answer(session_key: str, number: int):
+    """Сохранит ответ пользователя в базу данных"""
+    UserNumbers.objects.create(
+        user_session=session_key,
+        number=number
+    )
+    return 1
+
+
+def check_psychics(session_key: str):
+    """Проверит экстрасенсов и внесет необходимые данные в базу данных"""
+    this_user = UserNumbers.objects.filter(
+        user_session=session_key,
+        is_checked=False
+    ).last()
+    print(this_user)
+    physics = Physic.objects.all()
+    for psychic in physics:
+        this_psychic = PsychicNumbers.objects.filter(
+            psychic=psychic,
+            user_session=session_key,
+            is_checked=False
+        ).last()
+        if this_user.number == this_psychic.number:
+            this_psychic.confidence_level = F('confidence_level') + 10
+        else:
+            this_psychic.confidence_level = F('confidence_level') - 10
+        this_psychic.save()
+        print(this_psychic)
+    return None

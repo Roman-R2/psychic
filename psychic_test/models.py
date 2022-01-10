@@ -16,13 +16,19 @@ class PsychicNumbers(models.Model):
         related_name='psychic'
     )
     user_session = models.CharField(max_length=50)
-    # user_attempt = models.IntegerField(default=0)
     number = models.SmallIntegerField()
+    is_checked = models.BooleanField(default=False)
     confidence_level = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.psychic.name} {self.number} {self.confidence_level=}"
 
 
 class UserNumbers(models.Model):
     """Модель для хранения загаданных чисел пользователя"""
     user_session = models.CharField(max_length=50)
-    # user_attempt = models.IntegerField(default=0)
+    is_checked = models.BooleanField(default=False)
     number = models.SmallIntegerField(verbose_name='Число')
+
+    def __str__(self):
+        return f"{self.user_session} {self.number}"
