@@ -5,6 +5,28 @@ from django.db.models import F
 from .models import Physic, PsychicNumbers, UserNumbers
 
 
+def get_confidence_levels():
+    """Получим уровни достоверности каждого экстрасенса"""
+    pass
+
+
+def get_history_user_numbers(session_key: str, ):
+    """Получит историю чисел пользователя"""
+    this_numbers = UserNumbers.objects.filter(
+        user_session=session_key,
+    )
+    return this_numbers
+
+
+def get_history_assumptions_for_psychic(session_key: str, psychic_pk: int):
+    """Получит историю догадок для экстрасенсы по его pk"""
+    this_psychic = PsychicNumbers.objects.filter(
+        psychic=Physic(pk=psychic_pk),
+        user_session=session_key,
+    )
+    return this_psychic
+
+
 def get_last_confidence_level(session_key: str, psychic_pk: int):
     """Получит последний уровень достоверности экстрасенса для определенного
     пользователя"""
@@ -47,7 +69,6 @@ def check_psychics(session_key: str):
         user_session=session_key,
         is_checked=False
     ).last()
-    print(this_user)
     physics = Physic.objects.all()
     for psychic in physics:
         this_psychic = PsychicNumbers.objects.filter(
@@ -60,5 +81,4 @@ def check_psychics(session_key: str):
         else:
             this_psychic.confidence_level = F('confidence_level') - 10
         this_psychic.save()
-        print(this_psychic)
     return None
