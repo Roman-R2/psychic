@@ -1,10 +1,12 @@
-from .models import PsychicNumbers, Physic
+
+from .models import Physic
 from .services import get_history_assumptions_for_psychic, \
     get_history_user_numbers, get_last_confidence_level
 
 
 def statistics(request):
-    statistics = {
+
+    work_statistics = {
         'history_assumptions': [],
         'user_numbers': [],
         'physics_confidence_level': []
@@ -15,9 +17,9 @@ def statistics(request):
             request.session.session_key,
             psychic.pk
         )
-        statistics['history_assumptions'].append(history_assumptions)
+        work_statistics['history_assumptions'].append(history_assumptions)
 
-    statistics['user_numbers'] = get_history_user_numbers(
+    work_statistics['user_numbers'] = get_history_user_numbers(
         request.session.session_key
     )
 
@@ -26,8 +28,8 @@ def statistics(request):
             request.session.session_key,
             psychic.pk
         )
-        statistics['physics_confidence_level'].append((
+        work_statistics['physics_confidence_level'].append((
             psychic.name, last_confidence_level))
     return {
-        'statistics': statistics
+        'statistics': work_statistics
     }

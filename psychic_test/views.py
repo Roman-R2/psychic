@@ -1,16 +1,13 @@
 from django.shortcuts import render, redirect
 
 from .forms import QuestionForm
-from .services import get_psychic_assumptions, save_user_answer, check_psychics
+from .services import get_psychic_assumptions, save_user_answer, \
+    check_psychics, start_session
 
 
 def index(request):
-    # Сессия на 4 часа
-    if 'anonymous_user' not in request.session:
-        request.session.set_expiry(14400)
-        request.session['anonymous_user'] = True
-
-    # print(request.session.session_key)
+    if request.session.is_empty():
+        start_session(request)
 
     if request.method == 'POST':
         return redirect("psychic_test:psychic_assumption")
@@ -19,6 +16,9 @@ def index(request):
 
 
 def psychic_assumption(request):
+    if request.session.is_empty():
+        return redirect("psychic_test:index")
+
     if request.method == 'POST':
         form = QuestionForm(request.POST)
         if form.is_valid():
@@ -42,7 +42,3 @@ def psychic_assumption(request):
         'psychic_test/psychic_assumption.html',
         context=context
     )
-
-
-def user_answer(request):
-    return None
