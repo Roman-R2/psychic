@@ -1,4 +1,14 @@
 <div style="text-align: center;">
+    <h3>Текущее значение достоверности по каждому экстрасенсу.</h3>
+    <table class="table">
+        {% for confidence_level in statistics.physics_confidence_level %}
+            <tr>
+                <td>{{ confidence_level.0 }}</td>
+                <td>{{ confidence_level.1 }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
     <h3>История догадок каждого экстрасенса.</h3>
     {% for physics in statistics.history_assumptions %}
         <table class="table">
@@ -20,14 +30,6 @@
         {% endfor %}
     </table>
 
-    <h3>Текущее значение достоверности по каждому экстрасенсу.</h3>
-    <table class="table">
-        {% for confidence_level in statistics.physics_confidence_level %}
-            <tr>
-                <td>{{ confidence_level.0 }}</td>
-                <td>{{ confidence_level.1 }}</td>
-            </tr>
-        {% endfor %}
-    </table>
+
 </div>
 
