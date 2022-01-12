@@ -24,15 +24,7 @@ python -m venv my_venv
 pip install -r requirements.txt
 ```
 
-5. Применить существующие миграции:
-
-```
-python manage.py migrate
-```
-
-6. Создать суперпользователя (параметры суперпользователя задаются в файле .env).
-
-7. . Запустить dev сервер:
+4. Запустить dev сервер:
 
 ```
 python manage.py runserver
