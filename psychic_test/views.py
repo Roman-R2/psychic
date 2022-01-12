@@ -18,30 +18,30 @@ class GreetingView(TemplateView):
         return redirect("psychic_test:psychic_assumption")
 
 
-# def index(request):
-#     if request.session.is_empty():
-#         start_session(request)
-#
-#     if request.method == 'POST':
-#         return redirect("psychic_test:psychic_assumption")
-#
-#     return render(request, 'psychic_test/index.html')
+class AnswerView(TemplateView):
+    template_name = 'psychic_test/psychic_assumption.html'
+    form_class = QuestionForm
 
-# class AnswerView(View):
-#     template_name = 'psychic_test/psychic_assumption.html'
-#
-#     def dispatch(self, request, *args, **kwargs):
-#         if request.session.is_empty():
-#             return redirect("psychic_test:index")
-#         return super().dispatch(request, *args, **kwargs)
+    def _add_context_and_render(self, request, form):
+        context = {
+            'form': form,
+            'psychic_assumption': get_psychic_assumptions(
+                request.session.session_key,
+            )
+        }
+        return render(
+            request,
+            self.template_name,
+            context=context
+        )
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.session.is_empty():
+            return redirect("psychic_test:index")
+        return super().dispatch(request, *args, **kwargs)
 
-def psychic_assumption(request):
-    if request.session.is_empty():
-        return redirect("psychic_test:index")
-
-    if request.method == 'POST':
-        form = QuestionForm(request.POST)
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
         if form.is_valid():
             save_user_answer(
                 request.session.session_key,
@@ -49,17 +49,8 @@ def psychic_assumption(request):
             )
             check_psychics(request.session.session_key)
             return redirect("psychic_test:index")
-    else:
-        form = QuestionForm()
+        return self._add_context_and_render(request, form)
 
-    context = {
-        'form': form,
-        'psychic_assumption': get_psychic_assumptions(
-            request.session.session_key,
-        )
-    }
-    return render(
-        request,
-        'psychic_test/psychic_assumption.html',
-        context=context
-    )
+    def get(self, request, *args, **kwargs):
+        form = self.form_class()
+        return self._add_context_and_render(request, form)
