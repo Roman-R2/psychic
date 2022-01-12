@@ -48,7 +48,7 @@ def get_psychic_assumptions(request) -> list:
                                 key))
     else:
         for key, psychic in enumerate(app_data['psychics']):
-            this_number = random.randint(0, 99)
+            this_number = random.randint(10, 99)
             assumptions.append((psychic['name'], this_number, key))
         store_assumptions_to_session(request, assumptions)
 
