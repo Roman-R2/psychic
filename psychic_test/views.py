@@ -1,18 +1,39 @@
 from django.shortcuts import render, redirect
+from django.views.generic import TemplateView
 
 from .forms import QuestionForm
 from .services import get_psychic_assumptions, save_user_answer, \
     check_psychics, start_session
 
 
-def index(request):
-    if request.session.is_empty():
-        start_session(request)
+class GreetingView(TemplateView):
+    template_name = 'psychic_test/index.html'
 
-    if request.method == 'POST':
+    def dispatch(self, request, *args, **kwargs):
+        if request.session.is_empty():
+            start_session(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
         return redirect("psychic_test:psychic_assumption")
 
-    return render(request, 'psychic_test/index.html')
+
+# def index(request):
+#     if request.session.is_empty():
+#         start_session(request)
+#
+#     if request.method == 'POST':
+#         return redirect("psychic_test:psychic_assumption")
+#
+#     return render(request, 'psychic_test/index.html')
+
+# class AnswerView(View):
+#     template_name = 'psychic_test/psychic_assumption.html'
+#
+#     def dispatch(self, request, *args, **kwargs):
+#         if request.session.is_empty():
+#             return redirect("psychic_test:index")
+#         return super().dispatch(request, *args, **kwargs)
 
 
 def psychic_assumption(request):
