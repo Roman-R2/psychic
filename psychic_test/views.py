@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView
 
 from .forms import QuestionForm
-from .services import get_psychic_assumptions, save_user_answer, \
-    check_psychics, start_session
+from .services import get_psychic_assumptions, check_psychics, \
+    start_app_session, store_user_answer
 
 
 class GreetingView(TemplateView):
@@ -11,7 +11,7 @@ class GreetingView(TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.session.is_empty():
-            start_session(request)
+            start_app_session(request)
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -26,7 +26,7 @@ class AnswerView(TemplateView):
         context = {
             'form': form,
             'psychic_assumption': get_psychic_assumptions(
-                request.session.session_key,
+                request
             )
         }
         return render(
@@ -43,11 +43,14 @@ class AnswerView(TemplateView):
     def post(self, request, *args, **kwargs):
         form = self.form_class(request.POST)
         if form.is_valid():
-            save_user_answer(
-                request.session.session_key,
+            store_user_answer(
+                request,
                 request.POST.get('number')
             )
-            check_psychics(request.session.session_key)
+            check_psychics(
+                request,
+                int(request.POST.get('number'))
+            )
             return redirect("psychic_test:index")
         return self._add_context_and_render(request, form)
 

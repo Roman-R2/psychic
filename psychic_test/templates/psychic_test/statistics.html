@@ -11,11 +11,12 @@
 
     <h3>История догадок каждого экстрасенса.</h3>
     {% for physics in statistics.history_assumptions %}
+        <h3>{{ physics.0 }}</h3>
         <table class="table">
-            {% for data in  physics %}
+            {% for data in  physics.1 %}
                 <tr>
-                    <td>{{ data.psychic.name }}</td>
-                    <td>{{ data.number }}</td>
+                    <td>Догадка {{ forloop.counter }}:</td>
+                    <td>{{ data }}</td>
                 </tr>
             {% endfor %}
         </table>
@@ -23,13 +24,12 @@
 
     <h3>История введённых пользователем чисел. </h3>
     <table class="table">
-        {% for data in statistics.user_numbers %}
+        {% for data in statistics.user_numbers.0 %}
             <tr>
-                <td>{{ data.number }}</td>
+                <td>Загадал в {{ forloop.counter }} раз:</td>
+                <td>{{ data }}</td>
             </tr>
         {% endfor %}
     </table>
-
-
 </div>
 

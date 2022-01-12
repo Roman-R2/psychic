@@ -1,89 +1,125 @@
+import json
 import random
 
-from django.db.models import F
-
-from .models import Physic, PsychicNumbers, UserNumbers
+CONFIDENCE_DELTA = 10
 
 
-def start_session(request) -> None:
-    """Установит новую сессию на 4 часа"""
+def start_app_session(request) -> None:
+    """Установит новую сессию на 4 часа и запишет в нее заготовку структуры
+    данных"""
     # Сессия на 4 часа
     request.session.set_expiry(14400)
+    # Заготовка структуры данных
+    app_data = {
+        'psychics': [
+            {
+                'name': 'Ванга',
+                'assumptions': [],
+                'confidence_level': 0
+            },
+            {
+                'name': 'Распутин',
+                'assumptions': [],
+                'confidence_level': 0
+            }
+        ],
+        'user': []
+    }
+    # Отправим данные в сессию
+    request.session['app_data'] = json.dumps(app_data)
+    print(request.session['app_data'])
     return None
 
 
-def get_history_user_numbers(session_key: str) -> UserNumbers:
-    """Получит историю чисел пользователя"""
-    this_numbers = UserNumbers.objects.filter(
-        user_session=session_key,
-    )
-    return this_numbers
-
-
-def get_history_assumptions_for_psychic(
-        session_key: str,
-        psychic_pk: int
-) -> PsychicNumbers:
-    """Получит историю догадок для экстрасенсы по его pk"""
-    this_psychic = PsychicNumbers.objects.filter(
-        psychic=Physic(pk=psychic_pk),
-        user_session=session_key,
-    )
-    return this_psychic
-
-
-def get_last_confidence_level(session_key: str, psychic_pk: int) -> int:
-    """Получит последний уровень достоверности экстрасенса для определенного
-    пользователя"""
-    this_psychic = PsychicNumbers.objects.filter(
-        user_session=session_key,
-        psychic=Physic.objects.get(pk=psychic_pk)).last()
-    if this_psychic:
-        return this_psychic.confidence_level
-    return 0
-
-
-def get_psychic_assumptions(session_key: str) -> list:
-    """Получит предположения экстрасенсов и сохранит их в базу данных"""
+def get_psychic_assumptions(request) -> list:
+    """Получит предположения экстрасенсов и сохранит их в сессию.
+    Также проверит, выдвигали ли предположения экстрасенсы на данном этапе
+    """
     assumptions = []
-    physics = Physic.objects.all()
-    for psychic in physics:
-        this_number = random.randint(0, 99)
-        PsychicNumbers.objects.create(
-            psychic=Physic(pk=psychic.pk),
-            user_session=session_key,
-            number=this_number,
-            confidence_level=get_last_confidence_level(session_key, psychic.pk)
-        )
-        assumptions.append((psychic.name, this_number))
+    app_data = get_app_data_from_session(request)
+    count_psychic_assumptions = len(app_data['psychics'][0]['assumptions'])
+    count_user_answers = len(app_data['user'])
+
+    # Если экстрасенсы уже предположили, а пользователь не написал свое,
+    # то вернуться актуальные предположения
+    if count_psychic_assumptions > count_user_answers:
+        for key, psychic in enumerate(app_data['psychics']):
+            assumptions.append((psychic['name'], psychic['assumptions'][-1],
+                                key))
+    else:
+        for key, psychic in enumerate(app_data['psychics']):
+            this_number = random.randint(0, 99)
+            assumptions.append((psychic['name'], this_number, key))
+        store_assumptions_to_session(request, assumptions)
+
     return assumptions
 
 
-def save_user_answer(session_key: str, number: int) -> None:
-    """Сохранит ответ пользователя в базу данных"""
-    UserNumbers.objects.create(
-        user_session=session_key,
-        number=number
-    )
-    return None
+def get_app_data_from_session(request):
+    """Получит данные из сессии"""
+    return json.loads(request.session['app_data'])
 
 
-def check_psychics(session_key: str) -> None:
-    """Проверит экстрасенсов и внесет необходимые данные в базу данных"""
-    this_user = UserNumbers.objects.filter(
-        user_session=session_key,
-        is_checked=False
-    ).last()
-    physics = Physic.objects.all()
-    for psychic in physics:
-        this_psychic = PsychicNumbers.objects.filter(
-            psychic=psychic,
-            user_session=session_key,
-            is_checked=False
-        ).last()
-        if this_user.number == this_psychic.number:
-            this_psychic.confidence_level = F('confidence_level') + 10
+def store_assumptions_to_session(request, psychics: list):
+    """Сохранит предположения экстрасенсов в структуру сессии"""
+    try:
+        app_data = get_app_data_from_session(request)
+        for psychic in psychics:
+            assumption = psychic[1]
+            key_in_app_data = psychic[2]
+            app_data['psychics'][key_in_app_data]['assumptions'].append(
+                assumption)
+        request.session['app_data'] = json.dumps(app_data)
+    except:
+        raise ValueError("Не могу сохранить предположения в сессию")
+
+
+def store_user_answer(request, number: int):
+    """Сохранит ответ пользователя в структуру данных в сессии"""
+    try:
+        app_data = get_app_data_from_session(request)
+        app_data['user'].append(number)
+        request.session['app_data'] = json.dumps(app_data)
+    except:
+        raise ValueError("Не могу сохранить ответ пользователя в сессию")
+
+
+def check_psychics(request, user_number: int):
+    """Проверит экстрасенсов и внесет необходимые данные в сессию"""
+    app_data = get_app_data_from_session(request)
+    for key, psychic in enumerate(app_data['psychics']):
+        confidence_level = psychic['confidence_level']
+        if user_number == psychic['assumptions'][-1]:
+            app_data['psychics'][key][
+                'confidence_level'] = confidence_level + CONFIDENCE_DELTA
         else:
-            this_psychic.confidence_level = F('confidence_level') - 10
-        this_psychic.save()
-    return None
+            app_data['psychics'][key][
+                'confidence_level'] = confidence_level - CONFIDENCE_DELTA
+    request.session['app_data'] = json.dumps(app_data)
+
+
+def get_work_statistics(request):
+    """Получит статистику и преобразует ее в нужную структуру для показа"""
+    work_statistics = {
+        'physics_confidence_level': [],
+        'history_assumptions': [],
+        'user_numbers': [],
+    }
+    app_data = get_app_data_from_session(request)
+    for psychic in app_data['psychics']:
+        work_statistics['physics_confidence_level'].append(
+            (
+                psychic['name'],
+                psychic['confidence_level']
+            )
+        )
+        work_statistics['history_assumptions'].append(
+            (
+                psychic['name'],
+                psychic['assumptions']
+            )
+        )
+    work_statistics['user_numbers'].append(
+        app_data['user']
+    )
+    return work_statistics
