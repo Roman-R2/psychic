@@ -1,13 +1,18 @@
 {% extends 'psychic_test/base.html' %}
 
 {% block content %}
-    <h1>Тестирование экстрасенсов.</h1>
-    <hr>
+    <style>
+        .errorlist {
+            color: red;
+            list-style-type: none;
+        }
+    </style>
     <div style="text-align: center;">
         <h2>Экстрасенсы загадали:</h2>
         {% for number in psychic_assumption %}
             <h3>{{ number.0 }} <span class="badge bg-secondary">{{ number.1 }}</span></h3>
         {% endfor %}
+        <hr>
         <h2>Введите ваше загаданное число</h2>
         <form method="POST" action="{% url 'psychic_test:psychic_assumption' %}">
             {% csrf_token %}

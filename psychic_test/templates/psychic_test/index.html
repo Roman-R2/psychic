@@ -1,10 +1,10 @@
 {% extends 'psychic_test/base.html' %}
 
 {% block content %}
-    <h1>Тестирование экстрасенсов.</h1>
-    <hr>
+
     <div style="text-align: center;">
-        <h2>Вы загадали число?</h2>
+        <h2>Вы можете загадать двузначное число (от 10 до 99).</h2>
+        <h3>Вы загадали число?</h3>
         <form method="POST" action="{% url 'psychic_test:index' %}">
             {% csrf_token %}
             <input class="btn btn-primary btn-lg" type="submit" value="Да">
